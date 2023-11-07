@@ -50,6 +50,5 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences sharedPreferences = getSharedPreferences("data", MODE_PRIVATE);
         String highScore = sharedPreferences.getString("score", "0");
         highScoreView.setText(highScore);
-        Toast.makeText(this, highScore, Toast.LENGTH_SHORT).show();
     }
 }

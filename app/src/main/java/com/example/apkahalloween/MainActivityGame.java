@@ -1,5 +1,6 @@
 package com.example.apkahalloween;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 import androidx.constraintlayout.widget.ConstraintSet;
@@ -7,6 +8,7 @@ import androidx.constraintlayout.widget.ConstraintSet;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.ObjectAnimator;
+import android.animation.ValueAnimator;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Rect;
@@ -14,6 +16,7 @@ import android.graphics.RectF;
 import android.media.Image;
 import android.os.Bundle;
 import android.os.Handler;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -25,13 +28,14 @@ import java.util.Random;
 
 public class MainActivityGame extends AppCompatActivity {
 
-    private TextView scoreView;
+    private TextView scoreView, testView;
     private Button stopButton;
     private View viewTop, viewCenter, viewBot;
     private int count = 0;
     private ImageView ghost;
     private ConstraintLayout constraintLayout;
 
+    private int speed = 1500;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,20 +43,23 @@ public class MainActivityGame extends AppCompatActivity {
         setContentView(R.layout.activity_main_game);
 
         scoreView = findViewById(R.id.score);
+        testView = findViewById(R.id.test);
         stopButton = findViewById(R.id.stop);
         viewTop = findViewById(R.id.viewTop);
         viewCenter = findViewById(R.id.viewCenter);
         viewBot = findViewById(R.id.viewBot);
 
+
         ghost = findViewById(R.id.ghost);
         constraintLayout = findViewById(R.id.constraintLayout);
 
+        gameSpeed();
 
-        spawnPumpkin();
+        //spawnPumpkin();
 
-        //pumpkinSpawner();
+        pumpkinSpawner();
 
-        //addScore();
+        addScore();
 
 
         viewTop.setOnClickListener(new View.OnClickListener() {
@@ -119,7 +126,7 @@ public class MainActivityGame extends AppCompatActivity {
         int random = rand.nextInt(3) + 1;
         int topMargin = 90;
 
-        if(random == 1) {
+        if (random == 1) {
             constraintSet.connect(pumpkin.getId(), ConstraintSet.START, viewTop.getId(), ConstraintSet.START);
             constraintSet.connect(pumpkin.getId(), ConstraintSet.TOP, viewTop.getId(), ConstraintSet.TOP, topMargin);
         } else if (random == 2) {
@@ -138,11 +145,11 @@ public class MainActivityGame extends AppCompatActivity {
         ObjectAnimator animation = ObjectAnimator.ofFloat(
                 pumpkin,
                 "translationX",
-                screenWidth+150,
-                -pumpkin.getWidth()-400
+                screenWidth + 150,
+                -pumpkin.getWidth() - 400
         );
 
-        animation.setDuration(3000);
+        animation.setDuration(1000 + speed);
 
         animation.addListener(new AnimatorListenerAdapter() {
             @Override
@@ -150,18 +157,68 @@ public class MainActivityGame extends AppCompatActivity {
                 constraintLayout.removeView(pumpkin);
             }
 
+
+        });
+        animation.start();
+
+        animation.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
+            @Override
+            public void onAnimationUpdate(@NonNull ValueAnimator animation) {
+                //float currentX = pumpkin.getX();
+                int[] location1 = new int[2];
+                int[] location2 = new int[2];
+                pumpkin.getLocationOnScreen(location1);
+                ghost.getLocationOnScreen(location2);
+
+                int movingViewX = location1[0];
+                int movingViewY = location1[1];
+                int movingViewWidth = pumpkin.getWidth();
+                int movingViewHeight = pumpkin.getHeight();
+
+                int targetViewX = location2[0];
+                int targetViewY = location2[1];
+                int targetViewWidth = ghost.getWidth();
+                int targetViewHeight = ghost.getHeight();
+
+
+                if (movingViewX + movingViewWidth > targetViewX &&
+                        movingViewX < targetViewX + targetViewWidth &&
+                        movingViewY + movingViewHeight > targetViewY &&
+                        movingViewY < targetViewY + targetViewHeight) {
+                    constraintLayout.removeView(pumpkin);
+                    count+=50;
+                    scoreView.setText(Integer.toString(count));
+                }
+
+            }
         });
 
-        animation.start();
     }
 
+
     public void pumpkinSpawner() {
+        final Handler handler = new Handler();
+        final int delay = 400 + speed;
+        handler.postDelayed(new Runnable() {
+            @Override
+            public void run() {
+                spawnPumpkin();
+                int delay = 400 + speed;
+                handler.postDelayed(this, delay);
+            }
+        }, delay);
+    }
+
+
+    public void gameSpeed() {
         final Handler handler = new Handler();
         final int delay = 1000;
         handler.postDelayed(new Runnable() {
             @Override
             public void run() {
-                spawnPumpkin();
+                if(speed-4 >= 0) {
+                    speed -= 4;
+                }
                 handler.postDelayed(this, delay);
             }
         }, delay);
@@ -169,12 +226,14 @@ public class MainActivityGame extends AppCompatActivity {
 
     public void addScore() {
         final Handler handler = new Handler();
-        final int delay = 100;
+        final int delay = 50 + speed;
 
         handler.postDelayed(new Runnable() {
             public void run() {
                 count++;
+                int delay = 50 + speed;
                 scoreView.setText(Integer.toString(count));
+                testView.setText(Integer.toString(delay));
                 handler.postDelayed(this, delay);
             }
         }, delay);
